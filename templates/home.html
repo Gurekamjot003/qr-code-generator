@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}
+    Home -
+{% endblock title %}
+
+{% block body %}
+    <a class="btn btn-primary" href="{{url_for('generate')}}" role="button">Generate QR code</a>
+    <a class="btn btn-primary" href="{{url_for('read')}}" role="button">Read QR code</a>
+{% endblock body %}

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Welcome | MyQR</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
+      crossorigin="anonymous"
+    />
+    <style>
+      body {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+      }
+
+      .welcome-box {
+        text-align: center;
+        background-color: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .welcome-box h1 {
+        font-weight: bold;
+        color: #0a66c2;
+      }
+
+      .welcome-box p {
+        margin-top: 10px;
+        margin-bottom: 30px;
+        font-size: 1.1rem;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="welcome-box">
+      <h1>Welcome to MyQR</h1>
+      <p>Create QR codes for links, text, and files in seconds — simple and free.</p>
+      <a href="{{ url_for('home') }}" class="btn btn-primary btn-lg">Get Started</a>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>

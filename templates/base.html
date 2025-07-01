@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{url_for('static', filename = 'style/style.css')}}">
+    <title>
+        {% block title %}
+
+        {% endblock title %}
+        My QR
+    </title>
+</head>
+
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+        crossorigin="anonymous"></script>
+
+    <nav class="navbar navbar-expand-lg bg-body-tertiary ">
+        <div class="container-fluid">
+            <a class="navbar-brand flex-row align-items-center"  href = "{{url_for('home')}}">
+                <img src="{{url_for('static', filename='logo.png')}}" alt="Logo" width="30" height="30"
+                    class="d-inline-block align-text-top">
+                MyQR
+            </a>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{url_for('generate')}}">Generate</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{url_for('read')}}">Read</a>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center ms-auto">
+                <ul class="navbar-nav d-flex flex-row align-items-center">
+                {% if current_user.is_authenticated %}
+                    <li class="nav-item me-2">
+                        <a class="nav-link" href="{{url_for('my_qrcodes')}}">History</a>
+                    </li>
+                    <li class="nav-item me-2">
+                        <a class="nav-link" href="{{url_for('logout')}}">Log Out</a>
+                    </li>
+                {% else %}
+                    
+                    <li class="nav-item me-2">
+                        <a class="nav-link" href="{{url_for('login')}}">Sign in</a>
+                    </li>
+                    <li class="nav-item me-2">
+                        <span class="navbar-text">or</span>
+                    </li>
+                    <li class="nav-item me-2">
+                        <a class="nav-link" href="{{url_for('register')}}">Register</a>
+                    </li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="main_content">
+        {% block body %}
+
+        {% endblock body %}
+    </div>
+
+</body>
+
+</html>
