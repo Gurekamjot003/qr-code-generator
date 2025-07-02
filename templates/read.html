@@ -5,26 +5,471 @@ Read QR -
 {% endblock title %}
 
 {% block body %}
-<div class="container">
-    <h1>A smart, simple QR code Reader for any QR code</h1>
-    <form method="POST" enctype="multipart/form-data">
-        <label for="image">Upload an Image:</label><br><br>
-        <input type="file" name="image" id = "image" accept="image/*" required><br><br>
-        <button type="submit">Decode</button>
-    </form>
-</div>
-{% if results %}
-<div class="container">
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <!-- Hero Section -->
+            <div class="text-center mb-5">
+                <div class="hero-icon mb-4">
+                    <i class="fas fa-camera-retro fa-4x text-white"></i>
+                </div>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    Smart QR Code Reader
+                </h1>
+                <p class="lead text-white-50 mb-4">
+                    Upload any image containing a QR code and decode it instantly with our intelligent scanner
+                </p>
+            </div>
 
-    <h2>Decoded QR code data:</h2>
-    <ul>
-        {% for data in results %}
-        <li>
-            {{data}}
-        </li>
-        {% endfor %}
-    </ul>
-    
+            <!-- Upload Form Card -->
+            <div class="glass-card mb-5">
+                <div class="text-center mb-4">
+                    <h2 class="h3 text-white mb-3">
+                        <i class="fas fa-upload me-2"></i>
+                        Upload QR Code Image
+                    </h2>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" class="upload-form">
+                    <div class="upload-area mb-4">
+                        <div class="upload-zone" id="uploadZone">
+                            <div class="upload-content">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-white-50 mb-3"></i>
+                                <h4 class="text-white mb-2">Drop your image here</h4>
+                                <p class="text-white-50 mb-3">or click to browse files</p>
+                                <div class="file-types">
+                                    <span class="badge bg-light text-dark me-2">JPG</span>
+                                    <span class="badge bg-light text-dark me-2">PNG</span>
+                                    <span class="badge bg-light text-dark me-2">GIF</span>
+                                    <span class="badge bg-light text-dark">WEBP</span>
+                                </div>
+                            </div>
+                            <label for = "image">Image file</label>
+                            <input type="file" name="image" id="image" accept="image/*" required class="file-input">
+                        </div>
+                        
+                        <div class="file-preview" id="filePreview" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview" class="preview-image">
+                            <div class="file-info">
+                                <p class="file-name text-white mb-1"></p>
+                                <p class="file-size text-white-50 mb-0"></p>
+                            </div>
+                            <button type="button" class="btn-remove" id="removeFile">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg px-5 py-3">
+                            <i class="fas fa-qrcode me-2"></i>
+                            Decode QR Code
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Section -->
+            {% if results %}
+            <div class="glass-card results-card">
+                <div class="text-center mb-4">
+                    <div class="success-icon mb-3">
+                        <i class="fas fa-check-circle fa-3x text-success"></i>
+                    </div>
+                    <h2 class="h3 text-white mb-3">
+                        <i class="fas fa-eye me-2"></i>
+                        Decoded QR Code Data
+                    </h2>
+                </div>
+
+                <div class="results-container">
+                    {% for data in results %}
+                    <div class="result-item">
+                        <div class="result-header">
+                            <i class="fas fa-qrcode text-primary me-2"></i>
+                            <span class="result-label text-white-50">QR Code Content:</span>
+                        </div>
+                        <div class="result-content">
+                            <p class="text-white mb-2">{{ data }}</p>
+                             <button class="btn btn-outline-light btn-sm copy-btn" data-content="{{ data }}">
+                                <i class="fas fa-copy me-1"></i>
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('read') }}" class="btn btn-outline-light">
+                        <i class="fas fa-redo me-2"></i>
+                        Scan Another QR Code
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
-{% endif %}
+
+<style>
+    /* Hero Section Styles */
+    .hero-icon {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    /* Upload Area Styles */
+    .upload-area {
+        position: relative;
+    }
+
+    .upload-zone {
+        border: 3px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .upload-zone::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s;
+    }
+
+    .upload-zone:hover::before {
+        left: 100%;
+    }
+
+    .upload-zone:hover {
+        border-color: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .upload-zone.dragover {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+        transform: scale(1.02);
+    }
+
+    .file-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .file-types .badge {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 12px;
+    }
+
+    /* File Preview Styles */
+    .file-preview {
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        position: relative;
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .preview-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .file-info {
+        flex: 1;
+    }
+
+    .file-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .file-size {
+        font-size: 0.9rem;
+    }
+
+    .btn-remove {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(220, 53, 69, 0.8);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-remove:hover {
+        background: rgba(220, 53, 69, 1);
+        transform: scale(1.1);
+    }
+
+    /* Results Section Styles */
+    .results-card {
+        animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .success-icon {
+        animation: bounceIn 0.6s ease;
+    }
+
+    @keyframes bounceIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.05); }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .result-item {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .result-item:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .result-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .result-label {
+        font-weight: 500;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .result-content p {
+        font-size: 1.1rem;
+        font-weight: 500;
+        word-break: break-all;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+
+    .copy-btn {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .copy-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .upload-zone {
+            padding: 2rem 1rem;
+        }
+        
+        .file-preview {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .preview-image {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .result-content p {
+            font-size: 1rem;
+        }
+    }
+
+    /* Loading Animation */
+    .upload-form.loading .btn {
+        pointer-events: none;
+        opacity: 0.8;
+    }
+
+    .upload-form.loading .btn::after {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        margin: auto;
+        border: 2px solid transparent;
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('image');
+        const filePreview = document.getElementById('filePreview');
+        const previewImg = document.getElementById('previewImg');
+        const removeFileBtn = document.getElementById('removeFile');
+        const uploadForm = document.querySelector('.upload-form');
+
+        // File upload handling
+        fileInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        removeFileBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            filePreview.style.display = 'none';
+            uploadZone.style.display = 'block';
+        });
+
+        function handleFileSelect(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                document.querySelector('.file-name').textContent = file.name;
+                document.querySelector('.file-size').textContent = formatFileSize(file.size);
+                uploadZone.style.display = 'none';
+                filePreview.style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Form submission loading state
+        uploadForm.addEventListener('submit', () => {
+            uploadForm.classList.add('loading');
+        });
+
+         function setupCopyButtons() {
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const text = this.getAttribute('data-content');
+                    copyToClipboard(text, this);
+                });
+            });
+        }
+
+        // Initialize copy buttons
+        setupCopyButtons();
+    });
+
+    function copyToClipboard(text, button) {
+        // Create a temporary textarea to handle copying
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        
+        // Select and copy text
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+
+        // Show success feedback on the specific button
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+        button.classList.add('btn-success');
+        button.classList.remove('btn-outline-light');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-light');
+        }, 2000);
+    }
+</script>
 {% endblock body %}

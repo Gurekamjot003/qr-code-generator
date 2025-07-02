@@ -1,34 +1,928 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Register -
+My QR Codes -
 {% endblock title %}
 
 {% block body %}
-<div class="containter">
-    <h1>QR Codes: </h1>
-    <h2>
-        {{current_user.email}}
-    </h2>
-    <table class="table">
-        <thead>
-            <tr>
-                <th scope="col">SNo</th>
-                <th scope="col">Content</th>
-                <th scope="col">Time</th>
-                <th scope="col">Source</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in qrcodes %}
-            <tr>
-                <th scope="row">{{loop.index}}</th>
-                <td>{{row.content}}</td>
-                <td>{{row.created_at}}</td>
-                <td>{{row.source}}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <!-- Header Section -->
+            <div class="text-center mb-5">
+                <div class="hero-icon mb-4">
+                    <i class="fas fa-history fa-4x text-white"></i>
+                </div>
+                <h1 class="display-4 fw-bold text-white mb-3">
+                    My QR Code History
+                </h1>
+                <p class="lead text-white-50 mb-4">
+                    View and manage all your generated and scanned QR codes
+                </p>
+
+                <!-- User Info Card -->
+                <div class="user-info-card glass-card d-inline-block">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar">
+                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+                        </div>
+                        <div class="user-details ms-3">
+                            <h5 class="text-white mb-0">{{ current_user.email }}</h5>
+                            <small class="text-white-50">{{ qrcodes|length }} QR codes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="controls-section mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search QR codes..." class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                        <div class="filter-buttons">
+                            <button class="btn btn-filter active" data-filter="all">
+                                <i class="fas fa-list me-1"></i>All
+                            </button>
+                            <button class="btn btn-filter" data-filter="generated">
+                                <i class="fas fa-qrcode me-1"></i>Generated
+                            </button>
+                            <button class="btn btn-filter" data-filter="scanned">
+                                <i class="fas fa-camera me-1"></i>Scanned
+                            </button>
+                        </div>
+                        <div class="view-toggle ms-3">
+                            <button class="btn btn-view active" data-view="grid" title="Grid View">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button class="btn btn-view" data-view="list" title="List View">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Codes Display -->
+            {% if qrcodes %}
+            <!-- Grid View -->
+            <div class="qr-grid" id="gridView">
+                {% for row in qrcodes %}
+                <div class="qr-card glass-card" data-source="{{ row.source.lower() }}"
+                    data-content="{{ row.content.lower() }}">
+                    <div class="qr-card-header">
+                        <div class="source-badge">
+                            {% if row.source == 'Generated' %}
+                            <i class="fas fa-qrcode text-primary"></i>
+                            <span>Generated</span>
+                            {% else %}
+                            <i class="fas fa-camera text-success"></i>
+                            <span>Scanned</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-action" onclick="copyContent('{{ row.content }}')" title="Copy">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="btn-action" onclick="shareContent('{{ row.content }}')" title="Share">
+                                <i class="fas fa-share-alt"></i>
+                                <button class="btn-action" onclick="downloadQR('{{ row.content }}')" title="Download">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="btn-action" onclick="deleteQR(this, '{{ row.id }}')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="qr-content">
+                        <div class="content-preview">
+                            {% if row.content|length > 50 %}
+                            {{ row.content[:50] }}...
+                            {% else %}
+                            {{ row.content }}
+                            {% endif %}
+                        </div>
+                        <button class="btn-expand" onclick="showFullContent('{{ row.content }}')">
+                            <i class="fas fa-expand-alt"></i>
+                        </button>
+                    </div>
+
+                    <div class="qr-footer">
+                        <div class="timestamp">
+                            <i class="fas fa-clock me-1"></i>
+                            <span class="time-ago" data-time="{{ row.created_at }}">{{ row.created_at.strftime('%b %d,
+                                %Y at %I:%M %p') }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- List View -->
+            <div class="qr-list" id="listView" style="display: none;">
+                <div class="glass-card">
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th scope="col">
+                                        <i class="fas fa-hashtag me-2"></i>#
+                                    </th>
+                                    <th scope="col">
+                                        <i class="fas fa-file-alt me-2"></i>Content
+                                    </th>
+                                    <th scope="col">
+                                        <i class="fas fa-clock me-2"></i>Created
+                                    </th>
+                                    <th scope="col">
+                                        <i class="fas fa-tag me-2"></i>Source
+                                    </th>
+                                    <th scope="col">
+                                        <i class="fas fa-cog me-2"></i>Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in qrcodes %}
+                                <tr class="table-row" data-source="{{ row.source.lower() }}"
+                                    data-content="{{ row.content.lower() }}">
+                                    <th scope="row" class="row-number">{{ loop.index }}</th>
+                                    <td class="content-cell">
+                                        <div class="content-wrapper">
+                                            <span class="content-text">
+                                                {% if row.content|length > 60 %}
+                                                {{ row.content[:60] }}...
+                                                {% else %}
+                                                {{ row.content }}
+                                                {% endif %}
+                                            </span>
+                                            {% if row.content|length > 60 %}
+                                            <button class="btn-expand-table"
+                                                onclick="showFullContent('{{ row.content }}')">
+                                                <i class="fas fa-expand-alt"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="time-cell">
+                                        <span class="time-ago" data-time="{{ row.created_at }}">
+                                            {{ row.created_at.strftime('%b %d, %Y') }}
+                                        </span>
+                                        <small class="time-detail">
+                                            {{ row.created_at.strftime('%I:%M %p') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="source-tag source-{{ row.source.lower() }}">
+                                            {% if row.source == 'Generated' %}
+                                            <i class="fas fa-qrcode"></i>
+                                            Generated
+                                            {% else %}
+                                            <i class="fas fa-camera"></i>
+                                            Scanned
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="actions-cell">
+                                        <button class="btn-table-action" onclick="copyContent('{{ row.content }}')"
+                                            title="Copy">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                        <button class="btn-table-action" onclick="shareContent('{{ row.content }}')"
+                                            title="Share">
+                                            <i class="fas fa-share-alt"></i>
+                                        </button>
+                                        <button class="btn-table-action" onclick="downloadQR('{{ row.content }}')"
+                                            title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="btn-table-action"
+                                            onclick="deleteQR(this.closest('tr'), '{{ row.id }}')" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="empty-state glass-card text-center">
+                <div class="empty-icon mb-4">
+                    <i class="fas fa-qrcode fa-5x text-white-50"></i>
+                </div>
+                <h3 class="text-white mb-3">No QR Codes Yet</h3>
+                <p class="text-white-50 mb-4">
+                    Start generating or scanning QR codes to see your history here
+                </p>
+                <div class="empty-actions">
+                    <a href="{{ url_for('generate') }}" class="btn btn-primary me-3">
+                        <i class="fas fa-qrcode me-2"></i>Generate QR Code
+                    </a>
+                    <a href="{{ url_for('read') }}" class="btn btn-outline-light">
+                        <i class="fas fa-camera me-2"></i>Scan QR Code
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
+
+<!-- Content Modal -->
+<div class="modal fade" id="contentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-modal">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white">
+                    <i class="fas fa-file-alt me-2"></i>Full Content
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="content-display">
+                    <p class="text-white" id="modalContent"></p>
+                </div>
+                <div class="modal-actions mt-3">
+                    <button class="btn btn-primary" onclick="copyModalContent()">
+                        <i class="fas fa-copy me-2"></i>Copy
+                    </button>
+                    <button class="btn btn-outline-light" onclick="shareModalContent()">
+                        <i class="fas fa-share-alt me-2"></i>Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Hero Section */
+    .hero-icon {
+        animation: pulse 2s infinite;
+    }
+
+    .user-info-card {
+        padding: 1rem 1.5rem;
+        border-radius: 50px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .user-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Controls Section */
+    .controls-section {
+        margin-bottom: 2rem;
+    }
+
+    .search-box {
+        position: relative;
+    }
+
+    .search-box i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.5);
+        z-index: 2;
+    }
+
+    .search-box input {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 25px;
+        padding: 12px 20px 12px 45px;
+        color: white;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    .search-box input:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.1);
+        outline: none;
+    }
+
+    .search-box input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .filter-buttons,
+    .view-toggle {
+        display: inline-flex;
+        gap: 0.5rem;
+    }
+
+    .btn-filter,
+    .btn-view {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-filter:hover,
+    .btn-view:hover,
+    .btn-filter.active,
+    .btn-view.active {
+        background: var(--primary-gradient);
+        border-color: transparent;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* Grid View */
+    .qr-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .qr-card {
+        position: relative;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .qr-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .qr-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .source-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        color: white;
+        font-weight: 500;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-action {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-action:hover {
+        background: var(--primary-gradient);
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .qr-content {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+        border-left: 4px solid var(--primary-gradient);
+    }
+
+    .content-preview {
+        color: white;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        word-break: break-all;
+    }
+
+    .btn-expand {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 6px;
+        width: 24px;
+        height: 24px;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+    }
+
+    .btn-expand:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .qr-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .timestamp {
+        display: flex;
+        align-items: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+    }
+
+    /* List View */
+    .table-modern {
+        color: white;
+        margin: 0;
+    }
+
+    .table-modern thead th {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 1rem;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .table-modern tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .table-modern tbody tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: scale(1.01);
+    }
+
+    .table-modern td,
+    .table-modern th {
+        padding: 1rem;
+        vertical-align: middle;
+        border: none;
+    }
+
+    .row-number {
+        font-weight: 600;
+        color: var(--primary-gradient);
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .content-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .content-text {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+    }
+
+    .btn-expand-table {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        font-size: 0.8rem;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-expand-table:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .time-cell {
+        text-align: center;
+    }
+
+    .time-detail {
+        display: block;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.75rem;
+    }
+
+    .source-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .source-generated {
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .source-scanned {
+        background: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-table-action {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 6px;
+        width: 28px;
+        height: 28px;
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 2px;
+        font-size: 0.8rem;
+    }
+
+    .btn-table-action:hover {
+        background: var(--primary-gradient);
+        color: white;
+        transform: scale(1.1);
+    }
+
+    /* Empty State */
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+
+    .empty-icon {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .empty-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    /* Modal Styles */
+    .glass-modal .modal-content {
+        background: rgba(255, 255, 255, 0.1);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+    }
+
+    .content-display {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border-left: 4px solid var(--primary-gradient);
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .content-display p {
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .qr-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .controls-section .row {
+            flex-direction: column;
+        }
+
+        .controls-section .col-md-6:last-child {
+            text-align: center !important;
+        }
+
+        .filter-buttons,
+        .view-toggle {
+            justify-content: center;
+        }
+
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+
+        .table-modern td,
+        .table-modern th {
+            padding: 0.75rem 0.5rem;
+        }
+    }
+
+    /* Animation for filtered items */
+    .qr-card.hidden,
+    .table-row.hidden {
+        display: none;
+    }
+
+    .qr-card.show,
+    .table-row.show {
+        animation: fadeInUp 0.3s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const filterButtons = document.querySelectorAll('.btn-filter');
+        const viewButtons = document.querySelectorAll('.btn-view');
+        const gridView = document.getElementById('gridView');
+        const listView = document.getElementById('listView');
+
+        let currentFilter = 'all';
+        let currentView = 'grid';
+
+        // Search
+        searchInput.addEventListener('input', function () {
+            filterItems();
+        });
+
+        // Filter buttons
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                filterButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                filterItems();
+            });
+        });
+
+        // View toggle
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                viewButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentView = this.dataset.view;
+                toggleView();
+            });
+        });
+
+        function filterItems() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const cards = document.querySelectorAll('.qr-card');
+            const rows = document.querySelectorAll('.table-row');
+
+            // Filter grid items
+            cards.forEach(card => {
+                const content = card.dataset.content;
+                const source = card.dataset.source;
+                const matchesSearch = content.includes(searchTerm);
+                const matchesFilter = currentFilter === 'all' || source === currentFilter;
+
+                if (matchesSearch && matchesFilter) {
+                    card.classList.remove('hidden');
+                    card.classList.add('show');
+                } else {
+                    card.classList.add('hidden');
+                    card.classList.remove('show');
+                }
+            });
+
+            // Filter table rows
+            rows.forEach(row => {
+                const content = row.dataset.content;
+                const source = row.dataset.source;
+                const matchesSearch = content.includes(searchTerm);
+                const matchesFilter = currentFilter === 'all' || source === currentFilter;
+
+                if (matchesSearch && matchesFilter) {
+                    row.classList.remove('hidden');
+                    row.classList.add('show');
+                } else {
+                    row.classList.add('hidden');
+                    row.classList.remove('show');
+                }
+            });
+        }
+
+        function toggleView() {
+            if (currentView === 'grid') {
+                gridView.style.display = 'grid';
+                listView.style.display = 'none';
+            } else {
+                gridView.style.display = 'none';
+                listView.style.display = 'block';
+            }
+        }
+
+        // Update time ago
+        updateTimeAgo();
+        setInterval(updateTimeAgo, 60000); // Update every minute
+    });
+
+    function updateTimeAgo() {
+        const timeElements = document.querySelectorAll('.time-ago');
+        timeElements.forEach(element => {
+            const timeStr = element.dataset.time;
+            if (timeStr) {
+                const time = new Date(timeStr);
+                const now = new Date();
+                const diff = now - time;
+                const seconds = Math.floor(diff / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                const days = Math.floor(hours / 24);
+
+                let timeAgo;
+                if (days > 0) {
+                    timeAgo = `${days} day${days > 1 ? 's' : ''} ago`;
+                } else if (hours > 0) {
+                    timeAgo = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+                } else if (minutes > 0) {
+                    timeAgo = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+                } else {
+                    timeAgo = 'Just now';
+                }
+
+                // Only update if it's recent, otherwise keep the formatted date
+                if (days < 7) {
+                    element.textContent = timeAgo;
+                }
+            }
+        });
+    }
+
+    function copyContent(content) {
+        navigator.clipboard.writeText(content).then(() => {
+            showToast('Content copied to clipboard!', 'success');
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            showToast('Failed to copy content', 'error');
+        });
+    }
+
+    function shareContent(content) {
+        if (navigator.share) {
+            navigator.share({
+                title: 'QR Code Content',
+                text: content
+            }).catch(err => console.error('Error sharing:', err));
+        } else {
+            copyContent(content);
+            showToast('Content copied for sharing!', 'info');
+        }
+    }
+
+    function showFullContent(content) {
+        document.getElementById('modalContent').textContent = content;
+        const modal = new bootstrap.Modal(document.getElementById('contentModal'));
+        modal.show();
+    }
+
+    function copyModalContent() {
+        const content = document.getElementById('modalContent').textContent;
+        copyContent(content);
+    }
+
+    function shareModalContent() {
+        const content = document.getElementById('modalContent').textContent;
+        shareContent(content);
+    }
+
+    function showToast(message, type) {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast-notification toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        // Add styles
+        toast.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: ${type === 'success' ? 'rgba(40, 167, 69, 0.9)' : type === 'error' ? 'rgba(220, 53, 69, 0.9)' : 'rgba(23, 162, 184, 0.9)'};
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        `;
+
+        document.body.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(0)';
+        }, 100);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => document.body.removeChild(toast), 300);
+        }, 3000);
+    }
+    function downloadQR(content) {
+        const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(content)}&size=200x200`;
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'qr-code.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function deleteQR(element, id) {
+        // Optional: Send delete request to server
+        // fetch(`/delete_qr/${id}`, { method: 'POST' });
+
+        // Remove element from DOM
+        element.remove();
+        showToast('QR Code deleted.', 'success');
+    }
+</script>
 {% endblock body %}

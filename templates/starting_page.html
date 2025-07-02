@@ -3,48 +3,367 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Welcome | MyQR</title>
+    <title>Welcome | MyQR - QR Code Generator</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
       crossorigin="anonymous"
     />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --glass-bg: rgba(255, 255, 255, 0.15);
+        --glass-border: rgba(255, 255, 255, 0.2);
+        --text-primary: #2c3e50;
+        --shadow-soft: 0 20px 60px rgba(0, 0, 0, 0.1);
+        --shadow-hover: 0 30px 80px rgba(0, 0, 0, 0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
+        font-family: 'Inter', sans-serif;
         height: 100vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #f8f9fa;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Animated background elements */
+      body::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+          radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.4) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.4) 0%, transparent 50%),
+          radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.4) 0%, transparent 50%);
+        z-index: -2;
+        animation: backgroundPulse 8s ease-in-out infinite;
+      }
+
+      @keyframes backgroundPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.05); }
+      }
+
+      /* Floating QR code elements */
+      .floating-elements {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .floating-qr {
+        position: absolute;
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        animation: floatQR 6s ease-in-out infinite;
+      }
+
+      .floating-qr:nth-child(1) { top: 10%; left: 10%; animation-delay: -1s; }
+      .floating-qr:nth-child(2) { top: 20%; right: 15%; animation-delay: -3s; }
+      .floating-qr:nth-child(3) { bottom: 20%; left: 20%; animation-delay: -2s; }
+      .floating-qr:nth-child(4) { bottom: 10%; right: 10%; animation-delay: -4s; }
+      .floating-qr:nth-child(5) { top: 50%; left: 5%; animation-delay: -2.5s; }
+      .floating-qr:nth-child(6) { top: 60%; right: 8%; animation-delay: -1.5s; }
+
+      @keyframes floatQR {
+        0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+        50% { transform: translateY(-30px) rotate(180deg); opacity: 0.7; }
+      }
+
+      .welcome-container {
+        position: relative;
+        z-index: 10;
+        max-width: 500px;
+        width: 90%;
       }
 
       .welcome-box {
         text-align: center;
-        background-color: white;
-        padding: 40px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.15);
+        -webkit-backdrop-filter: blur(25px);
+        backdrop-filter: blur(25px);
+        padding: 3rem 2.5rem;
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: var(--shadow-soft);
+        position: relative;
+        overflow: hidden;
+        animation: slideInUp 1s ease-out;
+      }
+
+      .welcome-box::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+        animation: shimmer 3s ease-in-out infinite;
+      }
+
+      @keyframes shimmer {
+        0%, 100% { transform: rotate(0deg); opacity: 0; }
+        50% { transform: rotate(180deg); opacity: 1; }
+      }
+
+      .logo-container {
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 2;
+      }
+
+      .logo-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1rem;
+        background: var(--primary-gradient);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: white;
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+        animation: logoPulse 2s ease-in-out infinite;
+      }
+
+      @keyframes logoPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
       }
 
       .welcome-box h1 {
-        font-weight: bold;
-        color: #0a66c2;
+        font-weight: 800;
+        font-size: 2.5rem;
+        color: white;
+        margin-bottom: 1rem;
+        text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        position: relative;
+        z-index: 2;
+        animation: fadeInUp 1s ease-out 0.2s both;
       }
 
-      .welcome-box p {
-        margin-top: 10px;
-        margin-bottom: 30px;
+      .welcome-box .tagline {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 2.5rem;
+        line-height: 1.6;
+        font-weight: 400;
+        position: relative;
+        z-index: 2;
+        animation: fadeInUp 1s ease-out 0.4s both;
+      }
+
+      .feature-highlights {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 2.5rem;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 2;
+        animation: fadeInUp 1s ease-out 0.6s both;
+      }
+
+      .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .feature-item i {
+        color: #4facfe;
+        font-size: 1rem;
+      }
+
+      .cta-button {
+        background: var(--accent-gradient);
+        border: none;
+        border-radius: 50px;
+        padding: 1rem 2.5rem;
+        font-weight: 600;
         font-size: 1.1rem;
-        color: #555;
+        color: white;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        z-index: 2;
+        overflow: hidden;
+        animation: fadeInUp 1s ease-out 0.8s both;
+      }
+
+      .cta-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.6s;
+      }
+
+      .cta-button:hover::before {
+        left: 100%;
+      }
+
+      .cta-button:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 20px 40px rgba(79, 172, 254, 0.4);
+        color: white;
+        text-decoration: none;
+      }
+
+      .cta-button i {
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+      }
+
+      .cta-button:hover i {
+        transform: translateX(5px);
+      }
+
+      @keyframes slideInUp {
+        from {
+          opacity: 0;
+          transform: translateY(60px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .welcome-box {
+          padding: 2rem 1.5rem;
+          margin: 1rem;
+        }
+        
+        .welcome-box h1 {
+          font-size: 2rem;
+        }
+        
+        .welcome-box .tagline {
+          font-size: 1rem;
+        }
+        
+        .feature-highlights {
+          flex-direction: column;
+          gap: 1rem;
+        }
+        
+        .cta-button {
+          padding: 0.9rem 2rem;
+          font-size: 1rem;
+        }
+        
+        .floating-qr {
+          width: 40px;
+          height: 40px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .welcome-box h1 {
+          font-size: 1.8rem;
+        }
+        
+        .logo-icon {
+          width: 60px;
+          height: 60px;
+          font-size: 2rem;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="welcome-box">
-      <h1>Welcome to MyQR</h1>
-      <p>Create QR codes for links, text, and files in seconds — simple and free.</p>
-      <a href="{{ url_for('home') }}" class="btn btn-primary btn-lg">Get Started</a>
+    <!-- Floating background elements -->
+    <div class="floating-elements">
+      <div class="floating-qr"></div>
+      <div class="floating-qr"></div>
+      <div class="floating-qr"></div>
+      <div class="floating-qr"></div>
+      <div class="floating-qr"></div>
+      <div class="floating-qr"></div>
+    </div>
+
+    <div class="welcome-container">
+      <div class="welcome-box">
+        <div class="logo-container">
+          <div class="logo-icon">
+            <i class="fas fa-qrcode"></i>
+          </div>
+        </div>
+        
+        <h1>Welcome to MyQR</h1>
+        <p class="tagline">Create stunning QR codes for links, text, and files in seconds — simple, fast, and completely free.</p>
+        
+        <div class="feature-highlights">
+          <div class="feature-item">
+            <i class="fas fa-bolt"></i>
+            <span>Lightning Fast</span>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-palette"></i>
+            <span>Customizable</span>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-shield-alt"></i>
+            <span>Secure</span>
+          </div>
+        </div>
+        
+        <a href="{{ url_for('home') }}" class="cta-button">
+          <span>Get Started</span>
+          <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
     </div>
 
     <script
@@ -52,5 +371,48 @@
       integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
       crossorigin="anonymous"
     ></script>
+    
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Add interactive hover effects
+        const ctaButton = document.querySelector('.cta-button');
+        const welcomeBox = document.querySelector('.welcome-box');
+        
+        // Enhanced button interaction
+        ctaButton.addEventListener('mouseenter', function() {
+          this.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        });
+        
+        ctaButton.addEventListener('mouseleave', function() {
+          this.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+        });
+        
+        // Welcome box hover effect
+        welcomeBox.addEventListener('mouseenter', function() {
+          this.style.transform = 'scale(1.02)';
+          this.style.boxShadow = '0 30px 80px rgba(0, 0, 0, 0.2)';
+        });
+        
+        welcomeBox.addEventListener('mouseleave', function() {
+          this.style.transform = 'scale(1)';
+          this.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.1)';
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (document.activeElement === ctaButton) {
+              e.preventDefault();
+              ctaButton.click();
+            }
+          }
+        });
+        
+        // Auto-advance after 10 seconds (optional)
+        // setTimeout(() => {
+        //   window.location.href = "{{ url_for('home') }}";
+        // }, 10000);
+      });
+    </script>
   </body>
 </html>

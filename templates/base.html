@@ -6,68 +6,388 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
-    <link rel="stylesheet" href="{{url_for('static', filename = 'style/style.css')}}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <title>
         {% block title %}
 
         {% endblock title %}
-        My QR
+        MyQR - QR Code Generator & Reader
     </title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --dark-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 20px 60px rgba(0, 0, 0, 0.15);
+            --border-radius: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundShift 20s ease-in-out infinite;
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { transform: translateX(0) translateY(0); }
+            33% { transform: translateX(-10px) translateY(-10px); }
+            66% { transform: translateX(10px) translateY(10px); }
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.1) !important;
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            color: white !important;
+            transform: translateY(-2px);
+        }
+
+        .navbar-brand img {
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+        }
+
+        .navbar-brand:hover img {
+            transform: rotate(5deg) scale(1.05);
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            padding: 12px 20px !important;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-link:hover::before {
+            left: 100%;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .navbar-text {
+            color: rgba(255, 255, 255, 0.7) !important;
+            font-weight: 400;
+            margin: 0 8px;
+        }
+
+        .main_content {
+            min-height: calc(100vh - 80px);
+            padding: 2rem 0;
+            position: relative;
+        }
+
+        .container-fluid {
+            max-width: 1400px;
+        }
+
+        /* Floating elements animation */
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .floating-qr {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .floating-qr:nth-child(1) { top: 20%; left: 10%; animation-delay: -1s; }
+        .floating-qr:nth-child(2) { top: 60%; right: 15%; animation-delay: -3s; }
+        .floating-qr:nth-child(3) { bottom: 30%; left: 20%; animation-delay: -2s; }
+        .floating-qr:nth-child(4) { top: 40%; right: 30%; animation-delay: -4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.3rem;
+            }
+            
+            .nav-link {
+                padding: 8px 16px !important;
+                margin: 2px 0;
+            }
+            
+            .navbar-nav {
+                gap: 0.5rem;
+            }
+            
+            .floating-qr {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        /* Enhanced button styles for the template */
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+            background: var(--secondary-gradient);
+        }
+
+        /* Glass card effect for content blocks */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Smooth scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gradient);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-gradient);
+        }
+    </style>
 </head>
 
 <body>
+    <!-- Floating background elements -->
+    <div class="floating-elements">
+        <div class="floating-qr"></div>
+        <div class="floating-qr"></div>
+        <div class="floating-qr"></div>
+        <div class="floating-qr"></div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
         crossorigin="anonymous"></script>
 
-    <nav class="navbar navbar-expand-lg bg-body-tertiary ">
+    <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand flex-row align-items-center"  href = "{{url_for('home')}}">
-                <img src="{{url_for('static', filename='logo.png')}}" alt="Logo" width="30" height="30"
+            <a class="navbar-brand" href="{{url_for('home')}}">
+                <img src="{{url_for('static', filename='logo.png')}}" alt="MyQR Logo" width="32" height="32"
                     class="d-inline-block align-text-top">
-                MyQR
+                <span>MyQR</span>
             </a>
-            <ul class="nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{url_for('generate')}}">Generate</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{url_for('read')}}">Read</a>
-                </li>
-            </ul>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fas fa-bars" style="color: white;"></i>
+            </button>
 
-            <div class="d-flex align-items-center ms-auto">
-                <ul class="navbar-nav d-flex flex-row align-items-center">
-                {% if current_user.is_authenticated %}
-                    <li class="nav-item me-2">
-                        <a class="nav-link" href="{{url_for('my_qrcodes')}}">History</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{url_for('generate')}}">
+                            <i class="fas fa-qrcode me-2"></i>Generate
+                        </a>
                     </li>
-                    <li class="nav-item me-2">
-                        <a class="nav-link" href="{{url_for('logout')}}">Log Out</a>
-                    </li>
-                {% else %}
-                    
-                    <li class="nav-item me-2">
-                        <a class="nav-link" href="{{url_for('login')}}">Sign in</a>
-                    </li>
-                    <li class="nav-item me-2">
-                        <span class="navbar-text">or</span>
-                    </li>
-                    <li class="nav-item me-2">
-                        <a class="nav-link" href="{{url_for('register')}}">Register</a>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{url_for('read')}}">
+                            <i class="fas fa-camera me-2"></i>Read
+                        </a>
                     </li>
                 </ul>
-                {% endif %}
+
+                <ul class="navbar-nav ms-auto d-flex flex-row align-items-center">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item me-2">
+                            <a class="nav-link" href="{{url_for('my_qrcodes')}}">
+                                <i class="fas fa-history me-2"></i>History
+                            </a>
+                        </li>
+                        <li class="nav-item me-2">
+                            <a class="nav-link" href="{{url_for('logout')}}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Log Out
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item me-2">
+                            <a class="nav-link" href="{{url_for('login')}}">
+                                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                            </a>
+                        </li>
+                        <li class="nav-item me-2">
+                            <span class="navbar-text">or</span>
+                        </li>
+                        <li class="nav-item me-2">
+                            <a class="nav-link" href="{{url_for('register')}}">
+                                <i class="fas fa-user-plus me-2"></i>Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </nav>
 
-    <div class="main_content">
+    <div class="main_content" style="margin-top: 80px;">
         {% block body %}
 
         {% endblock body %}
     </div>
 
+    <script>
+        // Add smooth scrolling and navbar effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Navbar scroll effect
+            const navbar = document.querySelector('.navbar');
+            let lastScrollTop = 0;
+
+            window.addEventListener('scroll', function() {
+                let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (scrollTop > lastScrollTop && scrollTop > 100) {
+                    // Scrolling down
+                    navbar.style.transform = 'translateY(-100%)';
+                } else {
+                    // Scrolling up
+                    navbar.style.transform = 'translateY(0)';
+                }
+                
+                // Add blur effect based on scroll
+                if (scrollTop > 50) {
+                    navbar.style.webkitBackdropFilter = 'blur(25px)';
+                    navbar.style.backdropFilter = 'blur(25px)';
+                    navbar.style.background = 'rgba(255, 255, 255, 0.15)';
+                } else {
+                    navbar.style.webkitBackdropFilter = 'blur(20px)';
+                    navbar.style.backdropFilter = 'blur(20px)';
+                    navbar.style.background = 'rgba(255, 255, 255, 0.1)';
+                }
+                
+                lastScrollTop = scrollTop;
+            });
+
+            // Add loading animation
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s ease-in-out';
+            
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+
+            // Navbar collapse on mobile when clicking links
+            const navLinks = document.querySelectorAll('.nav-link');
+            const navbarCollapse = document.querySelector('.navbar-collapse');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (navbarCollapse.classList.contains('show')) {
+                        bootstrap.Collapse.getInstance(navbarCollapse).hide();
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

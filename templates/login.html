@@ -5,11 +5,79 @@ Register -
 {% endblock title %}
 
 {% block body %}
-<div class="containter">
-    <form method="POST">
-        <input type="email" name="email" required placeholder="Email">
-        <input type="password" name="password" required placeholder="Password">
-        <button type="submit">Login</button>
-    </form>
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .auth-card {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        max-width: 400px;
+        width: 100%;
+    }
+
+    .auth-card h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 28px;
+        font-weight: bold;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .auth-card input[type="email"],
+    .auth-card input[type="password"] {
+        width: 100%;
+        padding: 14px 20px;
+        margin-bottom: 20px;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 16px;
+        background: #fff;
+        transition: border 0.3s ease;
+    }
+
+    .auth-card input:focus {
+        border-color: #667eea;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .auth-card button[type="submit"] {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .auth-card button:hover {
+        background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    }
+</style>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>Login</h2>
+        <form method="POST">
+            <input type="email" name="email" required placeholder="Email">
+            <input type="password" name="password" required placeholder="Password">
+            <button type="submit">Login</button>
+        </form>
+    </div>
 </div>
 {% endblock body %}

@@ -111,6 +111,8 @@ def logout():
 def generate():
     if request.method == 'POST':
         text = request.form['text']
+        if(len(text) == 0):
+            return render_template('generate.html', error = "Please enter some text")
         qr = qrcode.make(text)
         filename = "qr.png"
         filename = os.path.join(app.config['UPLOAD_FOLDER'],filename)
@@ -118,13 +120,9 @@ def generate():
         new_QR = QRCodeData(content=text, user_id=current_user.id)
         db.session.add(new_QR)
         db.session.commit()
-        return redirect(url_for('qr_display'))
+        return render_template('generate.html', qr_code_url = True)
            
     return render_template('generate.html')
-
-@app.route('/qr-code')
-def qr_display():
-    return render_template('qr_display.html')
 
 
 @app.route('/download/<filename>')
