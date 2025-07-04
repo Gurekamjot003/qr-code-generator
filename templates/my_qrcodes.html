@@ -17,7 +17,7 @@ My QR Codes -
                     My QR Code History
                 </h1>
                 <p class="lead text-white-50 mb-4">
-                    View and manage all your generated and scanned QR codes
+                    View and manage your last 10 generated and scanned QR codes
                 </p>
 
                 <!-- User Info Card -->
@@ -76,7 +76,7 @@ My QR Codes -
                     data-content="{{ row.content.lower() }}">
                     <div class="qr-card-header">
                         <div class="source-badge">
-                            {% if row.source == 'Generated' %}
+                            {% if row.source == 'generated' %}
                             <i class="fas fa-qrcode text-primary"></i>
                             <span>Generated</span>
                             {% else %}
@@ -85,18 +85,23 @@ My QR Codes -
                             {% endif %}
                         </div>
                         <div class="card-actions">
-                            <button class="btn-action" onclick="copyContent('{{ row.content }}')" title="Copy">
+                            <!-- Copy Button -->
+                            <button class="btn-action copy-btn" data-content="{{ row.content }}" title="Copy">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <button class="btn-action" onclick="shareContent('{{ row.content }}')" title="Share">
-                                <i class="fas fa-share-alt"></i>
-                                <button class="btn-action" onclick="downloadQR('{{ row.content }}')" title="Download">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="btn-action" onclick="deleteQR(this, '{{ row.id }}')" title="Delete">
+
+                            <!-- Download Button -->
+                            <a href="{{url_for('download_qr', filename = row.id ~ '_' ~ row.user_id ~ 'qr.png')}}"
+                                class="btn-table-action" onclick="downloadQR('{{ row.content }}')" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+
+                            <!-- Delete Button -->
+                            <form action="{{url_for('delete', id = row.id)}}" method='POST' style="display: inline;">
+                                <button type="submit" class="btn-action" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
-                            </button>
+                            </form>
                         </div>
                     </div>
 
@@ -108,7 +113,7 @@ My QR Codes -
                             {{ row.content }}
                             {% endif %}
                         </div>
-                        <button class="btn-expand" onclick="showFullContent('{{ row.content }}')">
+                        <button class="btn-expand" onclick="showFullContent('{{ row.content }}')" title="Expand">
                             <i class="fas fa-expand-alt"></i>
                         </button>
                     </div>
@@ -152,7 +157,7 @@ My QR Codes -
                                 {% for row in qrcodes %}
                                 <tr class="table-row" data-source="{{ row.source.lower() }}"
                                     data-content="{{ row.content.lower() }}">
-                                    <th scope="row" class="row-number">{{ loop.index }}</th>
+                                    <th scope="row" class="row-number-alternative">{{ loop.index }}</th>
                                     <td class="content-cell">
                                         <div class="content-wrapper">
                                             <span class="content-text">
@@ -180,7 +185,7 @@ My QR Codes -
                                     </td>
                                     <td>
                                         <span class="source-tag source-{{ row.source.lower() }}">
-                                            {% if row.source == 'Generated' %}
+                                            {% if row.source == 'generated' %}
                                             <i class="fas fa-qrcode"></i>
                                             Generated
                                             {% else %}
@@ -190,22 +195,25 @@ My QR Codes -
                                         </span>
                                     </td>
                                     <td class="actions-cell">
-                                        <button class="btn-table-action" onclick="copyContent('{{ row.content }}')"
+                                        <button class="btn-table-action copy-btn" data-content="{{ row.content }}"
                                             title="Copy">
                                             <i class="fas fa-copy"></i>
                                         </button>
-                                        <button class="btn-table-action" onclick="shareContent('{{ row.content }}')"
-                                            title="Share">
-                                            <i class="fas fa-share-alt"></i>
-                                        </button>
-                                        <button class="btn-table-action" onclick="downloadQR('{{ row.content }}')"
+
+                                        <!-- Download Button -->
+                                        <a href="{{url_for('download_qr', filename = row.id ~ '_' ~ row.user_id ~ 'qr.png')}}"
+                                            class="btn-table-action" onclick="downloadQR('{{ row.content }}')"
                                             title="Download">
                                             <i class="fas fa-download"></i>
-                                        </button>
-                                        <button class="btn-table-action"
-                                            onclick="deleteQR(this.closest('tr'), '{{ row.id }}')" title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        </a>
+
+                                        <!-- Delete Button -->
+                                        <form action="{{url_for('delete', id = row.id)}}" method='POST'
+                                            style="display: inline;">
+                                            <button type="submit" class="btn-table-action" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
 
                                     </td>
                                 </tr>
@@ -229,7 +237,7 @@ My QR Codes -
                     <a href="{{ url_for('generate') }}" class="btn btn-primary me-3">
                         <i class="fas fa-qrcode me-2"></i>Generate QR Code
                     </a>
-                    <a href="{{ url_for('read') }}" class="btn btn-outline-light">
+                    <a href="{{ url_for('read') }}" class="btn btn-primary me-3">
                         <i class="fas fa-camera me-2"></i>Scan QR Code
                     </a>
                 </div>
@@ -239,7 +247,6 @@ My QR Codes -
     </div>
 </div>
 
-<!-- Content Modal -->
 <div class="modal fade" id="contentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content glass-modal">
@@ -250,21 +257,15 @@ My QR Codes -
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <p id="temp"></p>
                 <div class="content-display">
                     <p class="text-white" id="modalContent"></p>
-                </div>
-                <div class="modal-actions mt-3">
-                    <button class="btn btn-primary" onclick="copyModalContent()">
-                        <i class="fas fa-copy me-2"></i>Copy
-                    </button>
-                    <button class="btn btn-outline-light" onclick="shareModalContent()">
-                        <i class="fas fa-share-alt me-2"></i>Share
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 
 <style>
     /* Hero Section */
@@ -502,11 +503,25 @@ My QR Codes -
 
     .row-number {
         font-weight: 600;
-        color: var(--primary-gradient);
+        color: #667eea;
+        /* Fallback solid color */
         background: linear-gradient(135deg, #667eea, #764ba2);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+
+        /* Fallback for browsers that don't support gradient text */
+        @supports not (-webkit-background-clip: text) {
+            color: #667eea !important;
+            background: none !important;
+        }
+    }
+
+    .row-number-alternative {
+        font-weight: 600;
+        color: #667eea;
+        text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        font-size: 1.1rem;
     }
 
     .content-wrapper {
@@ -702,6 +717,273 @@ My QR Codes -
             transform: translateY(0);
         }
     }
+
+    /* Modal Expanded View Fixes */
+    .modal-fade .modal-dialog .modal-content {
+        background: rgba(30, 30, 30, 0.95) !important;
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+    }
+
+    .modal .modal-content {
+        background: rgba(30, 30, 30, 0.95) !important;
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+    }
+
+    #contentModal .modal-content {
+        background: rgba(30, 30, 30, 0.95) !important;
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+    }
+
+    #contentModal .modal-header {
+        background: rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px 16px 0 0;
+    }
+
+    #contentModal .modal-title {
+        color: white !important;
+        font-weight: 600;
+    }
+
+    #contentModal .btn-close {
+
+        border-radius: 50%;
+        opacity: 0.8;
+        transition: all 0.3s ease;
+        filter: invert(1);
+    }
+
+    #contentModal .btn-close:hover {
+
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    #contentModal .modal-body {
+        background: transparent;
+    }
+
+    #contentModal .content-display {
+        background: rgba(0, 0, 0, 0.3) !important;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border-left: 4px solid var(--primary-gradient);
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #contentModal .content-display p {
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+        margin: 0;
+        line-height: 1.6;
+        color: white !important;
+    }
+
+    #modalContent {
+        color: white !important;
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .content-display::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .content-display::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    .content-display::-webkit-scrollbar-thumb {
+        background: var(--primary-gradient);
+        border-radius: 10px;
+    }
+
+    .content-display::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #5a6fd8, #6b5b95);
+    }
+
+    /* List View Table Fixes */
+    .table-responsive {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .table-modern {
+        background: transparent !important;
+        margin: 0;
+    }
+
+    .table-modern thead {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .table-modern thead th {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: none;
+        color: white !important;
+        font-weight: 600;
+        padding: 1rem;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .table-modern tbody tr {
+        background: transparent !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .table-modern tbody tr:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        transform: scale(1.01);
+    }
+
+    .table-modern tbody tr td {
+        background: transparent !important;
+        color: white !important;
+        border: none;
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .table-modern tbody tr th {
+        background: transparent !important;
+        color: white !important;
+        border: none;
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    /* Download Link Fixes */
+    .btn-table-action {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: none;
+        border-radius: 6px;
+        width: 28px;
+        height: 28px;
+        color: rgba(255, 255, 255, 0.7) !important;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 2px;
+        font-size: 0.8rem;
+        text-decoration: none;
+    }
+
+    .btn-table-action:hover {
+        background: var(--primary-gradient) !important;
+        color: white !important;
+        transform: scale(1.1);
+        text-decoration: none;
+    }
+
+    a.btn-table-action {
+        text-decoration: none !important;
+    }
+
+    a.btn-table-action:hover {
+        text-decoration: none !important;
+    }
+
+    /* Grid View Download Button */
+    .card-actions a.btn-action {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        color: rgba(255, 255, 255, 0.8) !important;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+    .card-actions a.btn-action:hover {
+        background: var(--primary-gradient);
+        color: white !important;
+        transform: scale(1.1);
+        text-decoration: none;
+    }
+
+    /* Delete Button Form Fixes */
+    .card-actions form,
+    .actions-cell form {
+        display: inline-block;
+        margin: 0;
+    }
+
+    .card-actions form .btn-action,
+    .actions-cell form .btn-table-action {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .card-actions form .btn-action:hover,
+    .actions-cell form .btn-table-action:hover {
+        background: rgba(220, 53, 69, 0.8);
+        color: white !important;
+        transform: scale(1.1);
+    }
+
+    /* Toast Notification Styles */
+    .toast-notification {
+        font-family: inherit;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .toast-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .toast-content i {
+        font-size: 1.1rem;
+    }
+
+    /* Responsive Modal Fixes */
+    @media (max-width: 768px) {
+        .glass-modal .modal-dialog {
+            margin: 1rem;
+        }
+
+        .content-display {
+            max-height: 200px;
+            padding: 1rem;
+        }
+
+        .glass-modal .modal-header {
+            padding: 1rem;
+        }
+
+        .glass-modal .modal-body {
+            padding: 1rem;
+        }
+    }
 </style>
 
 <script>
@@ -720,6 +1002,27 @@ My QR Codes -
         searchInput.addEventListener('input', function () {
             filterItems();
         });
+
+        function setupCopyButtons() {
+            // Grid view copy buttons
+            document.querySelectorAll('.qr-grid .copy-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const content = this.getAttribute('data-content');
+                    copyContent(content);
+                });
+            });
+
+            // List view copy buttons
+            document.querySelectorAll('.qr-list .copy-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const content = this.getAttribute('data-content');
+                    copyContent(content);
+                });
+            });
+        }
+
+        setupCopyButtons();
+
 
         // Filter buttons
         filterButtons.forEach(btn => {
@@ -793,13 +1096,15 @@ My QR Codes -
         updateTimeAgo();
         setInterval(updateTimeAgo, 60000); // Update every minute
     });
-
+    
+    // Update time ago
     function updateTimeAgo() {
         const timeElements = document.querySelectorAll('.time-ago');
         timeElements.forEach(element => {
             const timeStr = element.dataset.time;
             if (timeStr) {
-                const time = new Date(timeStr);
+                // Force treat timeStr as UTC to fix timezone mismatch
+                const time = new Date(timeStr + 'Z');
                 const now = new Date();
                 const diff = now - time;
                 const seconds = Math.floor(diff / 1000);
@@ -827,40 +1132,27 @@ My QR Codes -
     }
 
     function copyContent(content) {
-        navigator.clipboard.writeText(content).then(() => {
-            showToast('Content copied to clipboard!', 'success');
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            showToast('Failed to copy content', 'error');
-        });
+        // Create a temporary textarea to handle copying
+        const textarea = document.createElement('textarea');
+        textarea.value = content;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+
+        // Select and copy text
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+
+        showToast('Content copied to clipboard!', 'success');
     }
 
-    function shareContent(content) {
-        if (navigator.share) {
-            navigator.share({
-                title: 'QR Code Content',
-                text: content
-            }).catch(err => console.error('Error sharing:', err));
-        } else {
-            copyContent(content);
-            showToast('Content copied for sharing!', 'info');
-        }
-    }
 
     function showFullContent(content) {
         document.getElementById('modalContent').textContent = content;
         const modal = new bootstrap.Modal(document.getElementById('contentModal'));
         modal.show();
-    }
-
-    function copyModalContent() {
-        const content = document.getElementById('modalContent').textContent;
-        copyContent(content);
-    }
-
-    function shareModalContent() {
-        const content = document.getElementById('modalContent').textContent;
-        shareContent(content);
     }
 
     function showToast(message, type) {
@@ -906,19 +1198,10 @@ My QR Codes -
             setTimeout(() => document.body.removeChild(toast), 300);
         }, 3000);
     }
-    function downloadQR(content) {
-        const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(content)}&size=200x200`;
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'qr-code.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
 
     function deleteQR(element, id) {
         // Optional: Send delete request to server
-        // fetch(`/delete_qr/${id}`, { method: 'POST' });
+        // fetch(`/${id}/delete`, { method: 'POST' });
 
         // Remove element from DOM
         element.remove();
