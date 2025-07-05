@@ -17,7 +17,7 @@ My QR Codes -
                     My QR Code History
                 </h1>
                 <p class="lead text-white-50 mb-4">
-                    View and manage your last 10 generated and scanned QR codes
+                    View and manage your <b><i>*last 10*</i></b> generated and scanned QR codes
                 </p>
 
                 <!-- User Info Card -->
@@ -91,7 +91,7 @@ My QR Codes -
                             </button>
 
                             <!-- Download Button -->
-                            <a href="{{url_for('download_qr', filename = row.id ~ '_' ~ row.user_id ~ 'qr.png')}}"
+                            <a href="{{url_for('download_qr', id = row.id)}}"
                                 class="btn-table-action" onclick="downloadQR('{{ row.content }}')" title="Download">
                                 <i class="fas fa-download"></i>
                             </a>
@@ -201,7 +201,7 @@ My QR Codes -
                                         </button>
 
                                         <!-- Download Button -->
-                                        <a href="{{url_for('download_qr', filename = row.id ~ '_' ~ row.user_id ~ 'qr.png')}}"
+                                        <a href="{{url_for('download_qr', id = row.id)}}"
                                             class="btn-table-action" onclick="downloadQR('{{ row.content }}')"
                                             title="Download">
                                             <i class="fas fa-download"></i>

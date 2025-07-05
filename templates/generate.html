@@ -504,13 +504,13 @@ Generate QR -
     <div class="error" id="error">{{ error }}</div>
     {% endif %}
 
-    {% if qr_code_url %}
+    {% if qr_code_id %}
     <div id="qrResult" class="qr-result show">
 
         <div class="qr-code">
-            <img src="{{ url_for('static', filename='qrcodes/' ~ qr_code_url) }}" alt="QR Code">
+            <img src="{{ url_for('view_qr', id = qr_code_id) }}" alt="QR Code">
         </div>
-        <a id="downloadBtn" class="download-btn" href="{{ url_for('download_qr', filename=qr_code_url) }}"
+        <a id="downloadBtn" class="download-btn" href="{{ url_for('download_qr', id=qr_code_id) }}"
             class="button">
             Download QR
         </a>

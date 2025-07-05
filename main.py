@@ -1,12 +1,14 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, send_file
 import qrcode
-import cv2  # ✅ Use OpenCV instead of pyzbar
+import cv2
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from io import BytesIO
+from sqlalchemy import LargeBinary
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
@@ -29,6 +31,7 @@ class QRCodeData(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     source = db.Column(db.String(10), default="generated")
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    image = db.Column(LargeBinary, nullable = False)
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -45,10 +48,6 @@ class User(db.Model, UserMixin):
 with app.app_context():
     db.create_all()
 
-STATIC_FOLDER = 'static'
-QR_CODE_DIR = os.path.join(STATIC_FOLDER, 'qrcodes')
-app.config['UPLOAD_FOLDER'] = QR_CODE_DIR
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 @app.route('/')
 def getting_started():
@@ -103,31 +102,39 @@ def generate():
         if len(text) == 0:
             return render_template('generate.html', error="Please enter some text")
         
-        new_QR = QRCodeData(content=text, user_id=current_user.id, source='generated')
+        qr = qrcode.make(text)
+        buffer = BytesIO()
+        qr.save(buffer, format="PNG")
+        img = buffer.getvalue()
+
+        new_QR = QRCodeData(content=text, user_id=current_user.id, source='generated', image = img)
         db.session.add(new_QR)
         db.session.commit()
 
         count = QRCodeData.query.filter_by(user_id=current_user.id).count()
         if count > 10:
             last_qr = QRCodeData.query.filter_by(user_id=current_user.id).order_by(QRCodeData.created_at.asc()).first()
-            delete_from_static_and_db(last_qr)
+            db.session.delete(last_qr)
+            db.session.commit()
 
-        filename = f"{new_QR.id}_{new_QR.user_id}qr.png"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-        qr = qrcode.make(text)
-        qr.save(filepath)
-
-        return render_template('generate.html', qr_code_url=filename)
+        return render_template('generate.html', qr_code_id=new_QR.id)
 
     return render_template('generate.html')
 
-@app.route('/download/<filename>')
-def download_qr(filename):
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    return send_file(filepath, as_attachment=True)
+@app.route('/view_qr/<int:id>')
+@login_required
+def view_qr(id):
+    qr = QRCodeData.query.get_or_404(id)
+    if qr.image:
+        return send_file(BytesIO(qr.image), mimetype='image/png')   
+    return "QR code not found", 404
 
-# ✅ Updated to use OpenCV instead of pyzbar
+@app.route('/download/<int:id>')
+def download_qr(id):
+    qr = QRCodeData.query.get_or_404(id)
+    return send_file(BytesIO(qr.image), mimetype='image/png', as_attachment=True, download_name='qr.png')
+
 def read_qr_from_image(image_path):
     img = cv2.imread(image_path)
     detector = cv2.QRCodeDetector()
@@ -140,32 +147,27 @@ def read():
     if request.method == 'POST':
         image = request.files.get('image')
         if image:
-            filename = image.filename
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image.save(image_path)
-            decoded_data = read_qr_from_image(image_path)
+            temp_path = 'temp_uploaded.png'
+            image.save(temp_path)
+            decoded_data = read_qr_from_image(temp_path)
+            os.remove(temp_path)
             decoded_text = ''.join(decoded_data)
 
             if current_user.is_authenticated:
-                new_qr = QRCodeData(content=decoded_text, source='scanned', user_id=current_user.id)
-            else:
-                new_qr = QRCodeData(content=decoded_text, source='scanned')
+                qr = qrcode.make(decoded_text)
+                buffer = BytesIO()
+                qr.save(buffer, format='PNG')
+                img = buffer.getvalue()
+                new_qr = QRCodeData(content=decoded_text, source='scanned', user_id=current_user.id, image = img)
+                db.session.add(new_qr)
+                db.session.commit()
 
-            db.session.add(new_qr)
-            db.session.commit()
-
-            if current_user.is_authenticated:
                 count = QRCodeData.query.filter_by(user_id=current_user.id).count()
                 if count > 10:
                     last_qr = QRCodeData.query.filter_by(user_id=current_user.id).order_by(QRCodeData.created_at.asc()).first()
-                    delete_from_static_and_db(last_qr)
+                    db.session.delete(last_qr)
+                    db.session.commit()
 
-            filename = f"{new_qr.id}_{new_qr.user_id}qr.png"
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-            qr = qrcode.make(decoded_text)
-            qr.save(filepath)
-           
     return render_template('read.html', results=decoded_data)
 
 @app.route('/my_qrcodes')
@@ -174,19 +176,12 @@ def my_qrcodes():
     qrcodes = QRCodeData.query.filter_by(user_id=current_user.id).order_by(QRCodeData.created_at.desc()).all()
     return render_template('my_qrcodes.html', qrcodes=qrcodes)
 
-def delete_from_static_and_db(qr):
-    filename = f"{qr.id}_{qr.user_id}qr.png"
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    if os.path.exists(file_path):
-        os.remove(file_path)
-    db.session.delete(qr)
-    db.session.commit()
-
 @app.route('/<int:id>/delete', methods=['POST'])
 @login_required
 def delete(id):
     qr = QRCodeData.query.get_or_404(id)
-    delete_from_static_and_db(qr)
+    db.session.delete(qr)
+    db.session.commit()
     return redirect(url_for('my_qrcodes'))
 
 if __name__ == '__main__':
