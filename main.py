@@ -1,7 +1,6 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, send_file
 import qrcode
-import cv2
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -138,29 +137,45 @@ def download_qr(id):
     qr = QRCodeData.query.get_or_404(id)
     return send_file(BytesIO(qr.image), mimetype='image/png', as_attachment=True, download_name='qr.png')
 
-def read_qr_from_image(image_path):
-    img = Image.open(image_path)
-    decoded_objs = decode(img)
-    return [obj.data.decode('utf-8') for obj in decoded_objs]
+def read_qr_from_stream(file_stream):
+    try:
+        # Open image using Pillow
+        image = Image.open(file_stream).convert('RGB')
+
+        # Decode using pyzbar
+        decoded_objects = decode(image)
+
+        decoded_texts = [obj.data.decode('utf-8') for obj in decoded_objects]
+
+        if not decoded_texts:
+            print("⚠️ No QR codes found.")
+        #else:
+            #print("✅ Decoded using pyzbar:", decoded_texts)
+
+        return decoded_texts
+
+    except Exception as e:
+        print("❌ Error decoding QR:", e)
+        return []
+
 
 @app.route('/read_qr', methods=['GET', 'POST'])
 def read():
     decoded_data = []
+
     if request.method == 'POST':
         image = request.files.get('image')
+
         if image:
-            temp_path = 'temp_uploaded.png'
-            image.save(temp_path)
-            decoded_data = read_qr_from_image(temp_path)
-            os.remove(temp_path)
+            decoded_data = read_qr_from_stream(image.stream)
             decoded_text = ''.join(decoded_data)
 
-            if current_user.is_authenticated:
+            if current_user.is_authenticated and decoded_text:
                 qr = qrcode.make(decoded_text)
                 buffer = BytesIO()
                 qr.save(buffer, format='PNG')
                 img = buffer.getvalue()
-                new_qr = QRCodeData(content=decoded_text, source='scanned', user_id=current_user.id, image = img)
+                new_qr = QRCodeData(content=decoded_text, source='scanned', user_id=current_user.id, image=img)
                 db.session.add(new_qr)
                 db.session.commit()
 
