@@ -9,6 +9,9 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from io import BytesIO
 from sqlalchemy import LargeBinary
+import io
+from pyzbar.pyzbar import decode
+from PIL import Image
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
@@ -136,10 +139,9 @@ def download_qr(id):
     return send_file(BytesIO(qr.image), mimetype='image/png', as_attachment=True, download_name='qr.png')
 
 def read_qr_from_image(image_path):
-    img = cv2.imread(image_path)
-    detector = cv2.QRCodeDetector()
-    data, bbox, _ = detector.detectAndDecode(img)
-    return [data] if data else []
+    img = Image.open(image_path)
+    decoded_objs = decode(img)
+    return [obj.data.decode('utf-8') for obj in decoded_objs]
 
 @app.route('/read_qr', methods=['GET', 'POST'])
 def read():
